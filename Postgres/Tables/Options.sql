@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS "options" (
+    "type" VARCHAR NOT NULL,
+    "contractSymbol" VARCHAR NOT NULL,
+    "strike" NUMERIC,
+    "currency" VARCHAR,
+    "lastPrice" NUMERIC,
+    "change" NUMERIC,
+    "percentChange" NUMERIC,
+    "volume" NUMERIC,
+    "openInterest" NUMERIC,
+    "bid" NUMERIC,
+    "ask" NUMERIC,
+    "contractSize" VARCHAR,
+    "expiration" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "lastTradeDate" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "impliedVolatility" NUMERIC,
+    "inTheMoney" VARCHAR,
+    PRIMARY KEY ("contractSymbol", "expiration", "type")
+);
