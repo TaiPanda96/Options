@@ -4,7 +4,26 @@ import traceback
 import pytz
 from   datetime import datetime
 from   multiprocessing import Pool
-from   Postgres.InsertQuery import bulkInsertQuery
+from   Postgres.InsertQuery import insertQuery
+
+columns = [
+    'type',
+    'contractSymbol',
+    'strike',
+    'currency',
+    'lastPrice',
+    'change',
+    'percentChange',
+    'volume',
+    'openInterest',
+    'bid',
+    'ask',
+    'contractSize',
+    'expiration',
+    'lastTradeDate',
+    'impliedVolatility',
+    'inTheMoney'
+];
 
 def getOptionsChain(symbol='AAPL'):
     try:
@@ -84,14 +103,14 @@ def updateOptionsData(symbol = 'TSLA'):
         # Flatten the list of lists
         updateCalls = [tuple(item.values())
                        for sublist in updateCalls for item in sublist]
-        updatePuts = [tuple(item.values())
+        updatePuts  = [tuple(item.values())
                       for sublist in updatePuts for item in sublist]
 
         # Insert Calls
-        bulkInsertQuery(updateCalls);
+        insertQuery('options',columns,updateCalls);
 
         # Insert Puts
-        bulkInsertQuery(updatePuts);
+        insertQuery('options',columns,updatePuts);
 
     except Exception as e:
         print(e)

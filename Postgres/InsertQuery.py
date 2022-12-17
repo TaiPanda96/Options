@@ -1,59 +1,61 @@
 from Postgres.Connect import connect
 from psycopg2.extras  import execute_values
+import json
 import traceback
 
 debug = False;
 
-def bulkInsertQuery(useValues = []):
-    try: 
-        connection = connect()
-        cursor     = connection.cursor();
-        useType    = useValues[0][0] if len(useValues) > 0 else None
-        useQuery   = """INSERT INTO options (
-            "type",
-            "contractSymbol",
-            "strike",
-            "currency",
-            "lastPrice",
-            "change",
-            "percentChange",
-            "volume",
-            "openInterest",
-            "bid",
-            "ask",
-            "contractSize",
-            "expiration",
-            "lastTradeDate",
-            "impliedVolatility",
-            "inTheMoney"
-        ) VALUES %s
-        ON CONFLICT ("contractSymbol", "expiration", "type") DO UPDATE SET 
-                    type                = EXCLUDED.type,
-                    "contractSymbol"    = EXCLUDED."contractSymbol",
-                    strike              = EXCLUDED.strike,
-                    currency            = EXCLUDED.currency,
-                    "lastPrice"         = EXCLUDED."lastPrice",
-                    "change"            = EXCLUDED."change",
-                    "percentChange"     = EXCLUDED."percentChange",
-                    volume              = EXCLUDED.volume,
-                    "openInterest"      = EXCLUDED."openInterest",
-                    bid                 = EXCLUDED.bid,
-                    ask                 = EXCLUDED.ask,
-                    "contractSize"      = EXCLUDED."contractSize",
-                    expiration          = EXCLUDED.expiration,
-                    "lastTradeDate"     = EXCLUDED."lastTradeDate",
-                    "impliedVolatility" = EXCLUDED."impliedVolatility",
-                    "inTheMoney"        = EXCLUDED."inTheMoney"
-        """;
-        execute_values(cursor, useQuery, useValues, template=None, page_size=100);
-        debug and print("INSERT AWS options {1}: {0}".format(useType, len(useValues)))
-        # commit the changes to the database
-        connection.commit();
-        # close communication with the database
-        cursor.close();
-    except Exception as e:
-        traceback.print_exc()
+def toColumns(array, output = 'columns'):
+    if array is None or len(array) == 0: return [];
+    useColumns = [json.dumps(string) for string in array];
+    columns = ''
+    if output == 'columns':
+        for idx, elem in enumerate(useColumns):
+            useString = elem.replace("'", ' ')
+            if (idx < len(useColumns) - 1):
+                columns += useString + ','
+            else: 
+                columns += useString
 
+        return columns;
+
+    elif output == 'conflict':
+        for idx, elem in enumerate(useColumns):
+            if (idx < len(useColumns) - 1):
+                columns += elem + " = EXCLUDED." + elem + ","
+            else: 
+                columns += elem + " = EXCLUDED." + elem
+
+        return columns;
+
+def insertQuery(useSchema, useColumns = [], useValues=[]):
+    if len(useColumns) == 0 or len(useValues) == 0: return;
+    try: 
+        connection     = connect(); 
+        cursor         = connection.cursor();
+        useColumnStatement   = toColumns(useColumns, 'columns');
+        useConflictStatement = toColumns(useColumns, 'conflict');
+        cursor.execute("select column_name from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE where table_name = '{0}'".format(useSchema))
+        usePrimaryKeys = cursor.fetchall() if cursor.rowcount > 0 else [];
+
+        if usePrimaryKeys is None or len(usePrimaryKeys) == 0: return 
+
+        # convert list of tuples to list of strings
+        usePrimaryKeys = toColumns([string[0] for string in usePrimaryKeys], 'columns');
+        # Use Query
+        useQuery = """INSERT INTO {0} ({1}) VALUES %s ON CONFLICT ({2}) DO UPDATE SET {3}
+        """.format(useSchema, useColumnStatement, usePrimaryKeys,useConflictStatement);
+
+        if debug: print(useQuery);
+        # Execute Query
+        execute_values(cursor, useQuery, useValues, template=None, page_size=100);
+        connection.commit();
+        cursor.close();
+
+    except Exception as error: 
+        print(error)
+        traceback.print_exc()
+    
     finally:
         if connection is not None:
             connection.close()
