@@ -72,9 +72,7 @@ def updateOptionsData(symbol = 'TSLA'):
     updatePuts  = []
     try:
         optionsChain = getOptionsChain(symbol)
-        if optionsChain is None:
-            return None
-
+        if optionsChain is None: return None
         options = optionsChain.get('optionsData', None) if optionsChain is not None else None
         dates = [i.keys() for i in options]
         # Flatten the list of lists

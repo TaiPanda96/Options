@@ -1,6 +1,7 @@
 import datetime 
 import requests 
 import traceback 
+from   bs4 import BeautifulSoup
 
 holidays =  [
         datetime.datetime(2022,1,2),
@@ -17,11 +18,7 @@ holidays =  [
         datetime.datetime(2022,12,25)
     ]
 
-
-def getRiskFreeRate():
-    """ This function returns the risk free rate. """
-    url = 'https://www.cnbc.com/quotes/US10Y'
-    headers = { 
+headers = { 
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
         'authority': 'www.cnbc.com',
         'pragma': 'no-cache',
@@ -30,16 +27,45 @@ def getRiskFreeRate():
         'accept': 'application/json, text/plain, */*',
         'sec-ch-ua-mobile': '?0',
     }
+
+def getPriceQuote(symbol):
+    """ This function returns the price quote for a given stock symbol. """
+    url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols={}'.format(symbol)
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            return response.json()
+            quoteStore = response.json() if response else None;
+            if quoteStore is None: return None;
+            quote = quoteStore.get('quoteResponse', {}).get('result', [])[0];
+            return {
+                "dividendDate": quote.get('dividendDate', None),
+                "trailingAnnualDividendRate": quote.get('trailingAnnualDividendRate', None),
+            }
+
+        else:
+            return None
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+
+
+def getRiskFreeRate():
+    """ This function returns the risk free rate. """
+    url = 'https://www.cnbc.com/quotes/US10Y'
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser');
+            priceContainer = soup.find('div', class_='QuoteStrip-lastPriceStripContainer');
+            if priceContainer is None: return 
+            price = priceContainer.find('span', class_='QuoteStrip-lastPrice');
+            if price is not None: return float(price.text.strip().replace('%', '')) / 100;
+            else: return None
         else:
             return None
 
     except Exception as e:
-        print(e)
-        traceback.print_exc(exec_info=True)
+        print(e);
 
 
 def getPublicylyListedHolidays():
@@ -49,20 +75,31 @@ def getPublicylyListedHolidays():
         "holidays": holidays
     }
 
-
-def getDividends(symbol):
-    """ This function checks for the dividend history of a given stock symbol. """
+def getDividendHistory(symbol):
+    """ This function returns the dividend history for a given stock symbol. """
+    url = 'https://api.nasdaq.com/api/quote/{}/dividends?assetclass=stocks'.format(symbol)
     try:
-        url = "https://query1.finance.yahoo.com/v7/finance/download/{0}?period1=0&period2=9999999999&interval=1d&events=div".format(
-            symbol)
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            return response.json()
+            quoteStore = response.json() if response else None;
+            if quoteStore is None: return None;
+            quote = quoteStore.get('data', {});
+            dividends = quote['dividends']['rows'];
+            return {
+                "dividendDate": datetime.datetime.strptime(dividends[0]['exOrEffDate'], '%m/%d/%Y'),
+                "exDividend": float(dividends[0]['amount'].replace('$', '')),
+            }
+
         else:
             return None
     except Exception as e:
         print(e)
-        traceback.print_exc(exec_info=True)
+        traceback.print_exc()
+
+
+def initializeInputs(symbol):
+    riskFreeRate = getRiskFreeRate();
+    if riskFreeRate is None: return None;
 
 
 def modelCalculator(symbol, method = 'Black-Scholes', hasDividends = False):

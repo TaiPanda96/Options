@@ -1,9 +1,12 @@
 from GetOptionsChain.GetOptions import updateAllOptions, updateOptionsData
-from GetOptionsChain.Model import getRiskFreeRate
+from GetOptionsChain.Model import getRiskFreeRate, getPriceQuote,getDividendHistory
 from multiprocessing import freeze_support
 
 def main():
-    getRiskFreeRate();
+    quoteSummary = getDividendHistory('AAPL');
+    print(quoteSummary);
+    # treasuryRate = getRiskFreeRate();
+    # print(treasuryRate);
     # updateAllOptions();
 
 if __name__ == '__main__':
