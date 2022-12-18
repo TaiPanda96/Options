@@ -38,8 +38,8 @@ def getPriceQuote(symbol):
             if quoteStore is None: return None;
             quote = quoteStore.get('quoteResponse', {}).get('result', [])[0];
             return {
-                "dividendDate": quote.get('dividendDate', None),
-                "trailingAnnualDividendRate": quote.get('trailingAnnualDividendRate', None),
+                "symbol": quote.get('symbol', ''),
+                "regularMarketPrice": quote.get('regularMarketPrice', 0.0),
             }
 
         else:
@@ -100,6 +100,25 @@ def getDividendHistory(symbol):
 def initializeInputs(symbol):
     riskFreeRate = getRiskFreeRate();
     if riskFreeRate is None: return None;
+
+    holidays = getPublicylyListedHolidays();
+    if holidays is None: return None;
+
+    priceQuote = getPriceQuote(symbol);
+    if priceQuote is None: return None;
+
+    dividendHistory = getDividendHistory(symbol);
+    if dividendHistory is None: return None;
+
+    return {
+        "symbol": symbol,
+        "riskFreeRate": riskFreeRate,
+        "tradingDays": holidays['numberOfTradingDays'],
+        "price": priceQuote['regularMarketPrice'],
+        "dividendDate": dividendHistory['dividendDate'],
+        "exDividend": dividendHistory['exDividend']
+    }
+
 
 
 def modelCalculator(symbol, method = 'Black-Scholes', hasDividends = False):
