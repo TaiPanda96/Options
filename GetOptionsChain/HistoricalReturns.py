@@ -39,8 +39,6 @@ def getHistoricalYahooPrices(symbol = 'AAPL'):
     """ 
     This function returns historical log returns for a given stock symbol. 
     """
-    today        = datetime.datetime.today().timestamp();
-    fiveYearsAgo = today - (5 * 365 * 24 * 60 * 60);
     today        = int(datetime.datetime.today().timestamp());
     fiveYearsAgo = int(today - (5 * 365 * 24 * 60 * 60));
     url = 'https://query1.finance.yahoo.com/v8/finance/chart/{}?formatted=true&crumb=tVWDTWvaSdP&lang=en-US&region=US&includeAdjustedClose=true&interval=1mo&period1={}&period2={}&events=capitalGain%7Cdiv%7Csplit&useYfid=true&corsDomain=finance.yahoo.com'.format(symbol, fiveYearsAgo, today);
