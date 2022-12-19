@@ -3,6 +3,7 @@ import requests
 import traceback 
 from   bs4 import BeautifulSoup
 
+# https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a
 holidays =  [
         datetime.datetime(2022,1,2),
         datetime.datetime(2022,1,16),
@@ -118,9 +119,3 @@ def initializeInputs(symbol):
         "dividendDate": dividendHistory['dividendDate'],
         "exDividend": dividendHistory['exDividend']
     }
-
-
-
-def modelCalculator(symbol, method = 'Black-Scholes', hasDividends = False):
-    """ This function calculates the model for the given stock symbol. """
-    return
