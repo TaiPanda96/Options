@@ -85,6 +85,6 @@ def updateAllUnderlyingSecuritiesInfo():
         time.sleep(1);
 
     update = [tuple(result.values()) for result in results]
-
     # Insert the results into the database
     insertQuery('historical_returns', useColumns, update);
+    print('Updated historical returns for all underlying securities.');
