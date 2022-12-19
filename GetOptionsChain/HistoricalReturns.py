@@ -3,7 +3,9 @@ import traceback
 import datetime
 import time
 import numpy as np
+import pytz 
 from Postgres.InsertQuery import insertQuery
+from multiprocessing import Pool
 
 headers = { 
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
@@ -61,7 +63,7 @@ def getHistoricalYahooPrices(symbol = 'AAPL'):
                 'symbol': symbol,
                 'avgLogReturns': float(avgReturns) if avgReturns is not None else None,
                 'standardDeviation': float(standardDeviation) if standardDeviation is not None else None,
-                'timestamp': today
+                'timestamp': pytz.utc.localize(datetime.datetime.fromtimestamp(today).now())
             }
         else:
             return None
@@ -70,14 +72,19 @@ def getHistoricalYahooPrices(symbol = 'AAPL'):
         traceback.print_exc()
 
 
-
 def updateAllUnderlyingSecuritiesInfo():
     """ This function updates the underlying securities info. """
     # Get all the underlying securities
-    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
+    tickers    = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
     useColumns = ['symbol', 'avgLogReturns', 'standardDeviation', 'timestamp'];
+    results    = [];
     for ticker in tickers:
         logReturns = getHistoricalYahooPrices(ticker);
-        if logReturns is None: continue;
-        insertQuery('historial_returns', useColumns, logReturns);
+        if logReturns is not None:
+            results.append(logReturns);
         time.sleep(1);
+
+    update = [tuple(result.values()) for result in results]
+
+    # Insert the results into the database
+    insertQuery('historical_returns', useColumns, update);

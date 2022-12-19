@@ -17,5 +17,5 @@ def main():
     # print(logReturns);
 
 if __name__ == '__main__':
-    # freeze_support();
+    #freeze_support();
     main();

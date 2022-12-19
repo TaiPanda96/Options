@@ -30,15 +30,17 @@ def toColumns(array, output = 'columns'):
 
 def insertQuery(useSchema, useColumns = [], useValues=[]):
     if len(useColumns) == 0 or len(useValues) == 0: return;
+    connection     = connect(); 
     try: 
-        connection     = connect(); 
         cursor         = connection.cursor();
         useColumnStatement   = toColumns(useColumns, 'columns');
         useConflictStatement = toColumns(useColumns, 'conflict');
         cursor.execute("select column_name from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE where table_name = '{0}'".format(useSchema))
-        usePrimaryKeys = cursor.fetchall() if cursor.rowcount > 0 else [];
+        usePrimaryKeys = cursor.fetchall();
 
-        if usePrimaryKeys is None or len(usePrimaryKeys) == 0: return 
+        if usePrimaryKeys is None or len(usePrimaryKeys) == 0: 
+            print("No Primary Keys Found")
+            return 
 
         # convert list of tuples to list of strings
         usePrimaryKeys = toColumns([string[0] for string in usePrimaryKeys], 'columns');
@@ -57,5 +59,4 @@ def insertQuery(useSchema, useColumns = [], useValues=[]):
         traceback.print_exc()
     
     finally:
-        if connection is not None:
-            connection.close()
+        connection.close()
