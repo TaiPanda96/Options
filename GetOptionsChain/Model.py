@@ -1,7 +1,10 @@
 import datetime 
 import requests 
 import traceback 
+import math 
 from   bs4 import BeautifulSoup
+from   Postgres.InsertQuery import insertQuery
+from   Postgres.GetQuery import getQuery
 
 # https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a
 holidays =  [
@@ -99,23 +102,51 @@ def getDividendHistory(symbol):
 
 
 def initializeInputs(symbol):
-    riskFreeRate = getRiskFreeRate();
-    if riskFreeRate is None: return None;
-
-    holidays = getPublicylyListedHolidays();
-    if holidays is None: return None;
-
-    priceQuote = getPriceQuote(symbol);
-    if priceQuote is None: return None;
-
+    riskFreeRate    = getRiskFreeRate();
+    holidays        = getPublicylyListedHolidays();
+    priceQuote      = getPriceQuote(symbol);
     dividendHistory = getDividendHistory(symbol);
-    if dividendHistory is None: return None;
-
+    logReturns      = getQuery("SELECT * FROM log_returns WHERE symbol = {}".format(symbol),[]);
+    callContracts   = getQuery("SELECT * FROM options WHERE symbol = {} AND type = 'call' ".format(symbol),[]);
+    putContracts    = getQuery("SELECT * FROM options WHERE symbol = {} AND type = 'put' ".format(symbol),[]);
     return {
-        "symbol": symbol,
+        **logReturns,
         "riskFreeRate": riskFreeRate,
         "tradingDays": holidays['numberOfTradingDays'],
         "price": priceQuote['regularMarketPrice'],
         "dividendDate": dividendHistory['dividendDate'],
-        "exDividend": dividendHistory['exDividend']
+        "exDividend": dividendHistory['exDividend'],
+        "callContracts": callContracts,
+        "putContracts": putContracts
     }
+
+
+def checkDividendEqualityFormula(dividend, strike, riskFreeRate, timeToExpiration):
+    return (dividend / strike) * math.exp(riskFreeRate * timeToExpiration);
+
+def modelCalculator(symbol):
+    hasDividends = False;
+    inputLibrary = initializeInputs(symbol);
+
+
+    # Evaluate Dividends 
+    if inputLibrary['dividendDate'] is not None and inputLibrary['exDividend'] is not None:
+        dividend = inputLibrary['exDividend'];
+        optimalToExcerciseEarly = [];
+        overValued  = [];
+        underValued = [];
+        # American Options
+
+        for contract in inputLibrary['callContracts']:
+            if dividend <= contract['strike']:
+                optimalToExcerciseEarly.append(contract);
+            pass
+
+        for contract in inputLibrary['putContracts']:
+            pass
+        return 
+
+
+    # European Options
+
+    return 

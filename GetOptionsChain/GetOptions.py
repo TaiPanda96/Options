@@ -5,7 +5,6 @@ import pytz
 from   datetime import datetime
 from   multiprocessing import Pool
 from   Postgres.InsertQuery import insertQuery
-from   multiprocessing import freeze_support
 
 columns = [
     'type',
@@ -124,8 +123,3 @@ def updateAllOptions():
     pool    = Pool(processes=6);
     pool.map(updateOptionsData, tickers);
     pool.close();
-
-
-def initOptionsController():
-    freeze_support();
-    updateAllOptions();
