@@ -1,5 +1,5 @@
 from GetOptionsChain.GetOptions import updateAllOptions
-from GetOptionsChain.HistoricalReturns import updateAllUnderlyingSecuritiesInfo
+from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
 
 from   multiprocessing import freeze_support
 import pycron 
