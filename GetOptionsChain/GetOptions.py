@@ -8,6 +8,7 @@ from   Postgres.InsertQuery import insertQuery
 
 columns = [
     'type',
+    'symbol',
     'contractSymbol',
     'strike',
     'currency',
@@ -39,9 +40,10 @@ def getOptionsChain(symbol='AAPL'):
         traceback.print_exc(exec_info=True)
 
 
-def standardizeOptionsData(optionsChain, type='call'):
+def standardizeOptionsData(optionsChain, type='call', symbol = ''):
     optionsData = {
         "type": type,
+        "symbol": symbol,
         "contractSymbol": optionsChain.get('contractSymbol', ''),
         "strike": optionsChain.get('strike', 0.0),
         "currency": optionsChain.get('currency', "USD"),
@@ -94,9 +96,10 @@ def updateOptionsData(symbol = 'TSLA'):
             puts = optionContract.get(
                 'puts', None) if optionContract is not None else None
 
-            updateCalls.append([standardizeOptionsData(i, 'call')
+            updateCalls.append([standardizeOptionsData(i, 'call', symbol)
                                for i in calls])
-            updatePuts.append([standardizeOptionsData(i, 'put') for i in puts])
+            updatePuts.append([standardizeOptionsData(i, 'put',symbol) 
+                               for i in puts])
 
         # Flatten the list of lists
         updateCalls = [tuple(item.values())

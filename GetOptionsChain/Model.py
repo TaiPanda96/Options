@@ -6,7 +6,7 @@ from   bs4 import BeautifulSoup
 from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
 
-# https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a
+""" Methodology: https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a """;
 holidays =  [
         datetime.datetime(2022,1,2),
         datetime.datetime(2022,1,16),
@@ -106,16 +106,17 @@ def initializeInputs(symbol):
     holidays         = getPublicylyListedHolidays();
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
-    logReturns       = getQuery("SELECT * FROM log_returns WHERE symbol = {}".format(symbol),[]);
-    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = {}".format(symbol),[]);
+    logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
+    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $""",[symbol]);
     return {
-        **logReturns,
         "riskFreeRate": riskFreeRate,
         "tradingDays": holidays['numberOfTradingDays'],
         "price": priceQuote['regularMarketPrice'],
         "dividendDate": dividendHistory['dividendDate'],
         "exDividend": dividendHistory['exDividend'],
-        "options": optionsContracts
+        "options": optionsContracts,
+        "logReturns": logReturns[0]['avgLogReturns'],
+        "standardDeviation": logReturns[0]['standardDeviation'],
     }
 
 def modelCalculator(symbol):

@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS "options" (
     "type" VARCHAR NOT NULL,
+    "symbol" VARCHAR,
     "contractSymbol" VARCHAR NOT NULL,
     "strike" NUMERIC,
     "currency" VARCHAR,
