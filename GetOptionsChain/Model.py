@@ -122,23 +122,27 @@ def initializeInputs(symbol):
 
 
 def checkDividendEqualityFormula(dividend, strike, riskFreeRate, timeToExpiration):
-    return (dividend / strike) * math.exp(riskFreeRate * timeToExpiration);
+    if dividend < strike * ( 1 - math.exp(riskFreeRate * -1 * (timeToExpiration))): return True
+    else: return False
+
 
 def modelCalculator(symbol):
     hasDividends = False;
     inputLibrary = initializeInputs(symbol);
-
+    riskFreeRate = inputLibrary['riskFreeRate'];
 
     # Evaluate Dividends 
     if inputLibrary['dividendDate'] is not None and inputLibrary['exDividend'] is not None:
-        dividend = inputLibrary['exDividend'];
+        dividend = inputLibrary.get('exDividend', 0.0);
         optimalToExcerciseEarly = [];
         overValued  = [];
         underValued = [];
         # American Options
 
         for contract in inputLibrary['callContracts']:
-            if dividend <= contract['strike']:
+            strike  = contract['strike'];
+            timeToExpiration = (contract['expirationDate'] - datetime.datetime.now()).days / inputLibrary['tradingDays'];
+            if checkDividendEqualityFormula(dividend, strike, riskFreeRate, timeToExpiration):
                 optimalToExcerciseEarly.append(contract);
             pass
 
