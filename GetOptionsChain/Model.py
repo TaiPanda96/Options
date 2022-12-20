@@ -102,13 +102,12 @@ def getDividendHistory(symbol):
 
 
 def initializeInputs(symbol):
-    riskFreeRate    = getRiskFreeRate();
-    holidays        = getPublicylyListedHolidays();
-    priceQuote      = getPriceQuote(symbol);
-    dividendHistory = getDividendHistory(symbol);
-    logReturns      = getQuery("SELECT * FROM log_returns WHERE symbol = {}".format(symbol),[]);
-    callContracts   = getQuery("SELECT * FROM options WHERE symbol = {} AND type = 'call' ".format(symbol),[]);
-    putContracts    = getQuery("SELECT * FROM options WHERE symbol = {} AND type = 'put' ".format(symbol),[]);
+    riskFreeRate     = getRiskFreeRate();
+    holidays         = getPublicylyListedHolidays();
+    priceQuote       = getPriceQuote(symbol);
+    dividendHistory  = getDividendHistory(symbol);
+    logReturns       = getQuery("SELECT * FROM log_returns WHERE symbol = {}".format(symbol),[]);
+    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = {}".format(symbol),[]);
     return {
         **logReturns,
         "riskFreeRate": riskFreeRate,
@@ -116,38 +115,35 @@ def initializeInputs(symbol):
         "price": priceQuote['regularMarketPrice'],
         "dividendDate": dividendHistory['dividendDate'],
         "exDividend": dividendHistory['exDividend'],
-        "callContracts": callContracts,
-        "putContracts": putContracts
+        "options": optionsContracts
     }
 
-
-def checkDividendEqualityFormula(dividend, strike, riskFreeRate, timeToExpiration):
-    if dividend < strike * ( 1 - math.exp(riskFreeRate * -1 * (timeToExpiration))): return True
-    else: return False
-
-
 def modelCalculator(symbol):
-    hasDividends = False;
     inputLibrary = initializeInputs(symbol);
     riskFreeRate = inputLibrary['riskFreeRate'];
+    stockPrice   = inputLibrary['price'];
+    dividendDate = inputLibrary['dividendDate'];
+    dividend     = inputLibrary.get('exDividend', None);
+
 
     # Evaluate Dividends 
     if inputLibrary['dividendDate'] is not None and inputLibrary['exDividend'] is not None:
-        dividend = inputLibrary.get('exDividend', 0.0);
         optimalToExcerciseEarly = [];
-        overValued  = [];
-        underValued = [];
         # American Options
-
-        for contract in inputLibrary['callContracts']:
-            strike  = contract['strike'];
-            timeToExpiration = (contract['expirationDate'] - datetime.datetime.now()).days / inputLibrary['tradingDays'];
-            if checkDividendEqualityFormula(dividend, strike, riskFreeRate, timeToExpiration):
+        for contract in inputLibrary['options']:
+            strike           = contract['strike'];
+            expirationDate   = contract['expirationDate']
+            if dividend < strike * ( 1 - math.exp(riskFreeRate * -1 * (expirationDate - dividendDate))): 
                 optimalToExcerciseEarly.append(contract);
-            pass
 
-        for contract in inputLibrary['putContracts']:
-            pass
+            
+
+
+
+
+            
+
+
         return 
 
 

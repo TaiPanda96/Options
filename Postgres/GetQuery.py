@@ -1,30 +1,55 @@
-from  datetime import datetime
 import traceback
 import pytz
-from Postgres.InsertQuery import toColumns
-from Postgres.Connect import connect
+from   datetime import datetime
+from   Postgres.Connect import connect
+import decimal
 
 debug = True;
 
+def queryDecorator(func):
+    def wrapper(*args, **kwargs):
+        results = func(*args, **kwargs);
+        if (results is None) or len(results) == 0: return [];
+        returnArray = [];
+        # zip the columns and values together
+        for value in results.get('results', []):
+            updateObj = {};
+            obj = dict(zip(results.get('columns', []), value));
+            for key,value in obj.items():
+                if isinstance(value, decimal.Decimal):
+                    updateObj[key] = float(value);
+                else: updateObj[key] = value;
+
+            returnArray.append(updateObj);
+        return returnArray;
+    return wrapper;
+
+@queryDecorator
 def getQuery(useQuery = """ """, useValues = []):
     connection = connect(); 
     if (connection is None): return;
     if (len(useQuery)  == 0): return;
-    if (len(useValues) == 0): return;
     try: 
         cursor = connection.cursor();
-        for idx, elem in enumerate(useValues):
-            if (idx < len(useValues) - 1):
-                useQuery = useQuery.replace("${}".format(idx), elem, 1);
+        useQuery = useQuery.replace("$", "%s") + ';'
+
+        for value in useValues:
+            if (isinstance(value, datetime)):
+                useQuery = useQuery.replace("%s", "'{}'".format(value.strftime('%Y-%m-%d %H:%M:%S')), 1);
+            elif (isinstance(value, int)) or (isinstance(value, float)):
+                useQuery = useQuery.replace("%s", "{}".format(value), 1);
             else: 
-                useQuery = useQuery.replace("${}".format(idx), elem, 1);
+                useQuery = useQuery.replace("%s", "'{}'".format(value), 1);
 
         cursor.execute(useQuery);
-        results = cursor.fetchall();
-        if len(results) == 0: return [];
+        results  = cursor.fetchall();
+        colnames = [desc[0] for desc in cursor.description];
         connection.commit();
         cursor.close();
-        return results if results else [];
+        return {
+            "results": results,
+            "columns": colnames
+        }
     except Exception as error: 
         print(error)
         traceback.print_exc()

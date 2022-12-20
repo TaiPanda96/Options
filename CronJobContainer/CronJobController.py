@@ -27,7 +27,7 @@ def cronJobInit():
 
 
 def cronJobHistoricalReturns():
-    if pycron.is_now('/15 * * * *') == True:
+    if pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['Historical Returns']['startMessage']);
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
