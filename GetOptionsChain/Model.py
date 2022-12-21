@@ -1,10 +1,14 @@
 import datetime 
 import requests 
 import traceback 
+import pprint
 import math 
+import pytz
 from   bs4 import BeautifulSoup
 from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
+from   datetime import timedelta
+from   GetOptionsChain.Formulas import laplaceDistributionCDF
 
 """ Methodology: https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a """;
 holidays =  [
@@ -107,7 +111,7 @@ def initializeInputs(symbol):
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $""",[symbol]);
+    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $ order by expiration DESC""",[symbol]);
     return {
         "riskFreeRate": riskFreeRate,
         "tradingDays": holidays['numberOfTradingDays'],
@@ -119,35 +123,51 @@ def initializeInputs(symbol):
         "standardDeviation": logReturns[0]['standardDeviation'],
     }
 
+def calculateAmericanOptions(optionsContracts, distributionType = 'la place'):
+    return 
+
+
+def calculateEuropeanOptions(optionsContracts, distributionType = 'la place'):
+    return
+
+
 def modelCalculator(symbol):
-    inputLibrary = initializeInputs(symbol);
-    riskFreeRate = inputLibrary['riskFreeRate'];
-    stockPrice   = inputLibrary['price'];
-    dividendDate = inputLibrary['dividendDate'];
-    dividend     = inputLibrary.get('exDividend', None);
+    recipeObj         = initializeInputs(symbol);
+    dividend          = recipeObj['exDividend'];
+    riskFreeRate      = recipeObj['riskFreeRate'];
+    options           = recipeObj['options'];
+    dividendDate      = recipeObj['dividendDate'];
+    price             = recipeObj['price'];
+    tradingDays       = recipeObj['tradingDays'];
+    logReturns        = recipeObj['logReturns'];
+    standardDeviation = recipeObj['standardDeviation'];
 
+    optimalToExcerciseEarly   = [];
+    notOptimalToExerciseEarly = [];
 
-    # Evaluate Dividends 
-    if inputLibrary['dividendDate'] is not None and inputLibrary['exDividend'] is not None:
-        optimalToExcerciseEarly = [];
+    optionsToCalculate = {};
+    # Evaluate Dividends Inequality to Determine Point in Time or Continous Exercise
+    if dividendDate is not None and dividend is not None:
         # American Options
-        for contract in inputLibrary['options']:
+        for contract in options:
             strike           = contract['strike'];
-            expirationDate   = contract['expirationDate']
-            if dividend < strike * ( 1 - math.exp(riskFreeRate * -1 * (expirationDate - dividendDate))): 
-                optimalToExcerciseEarly.append(contract);
+            expirationDate   = contract['expiration'];
 
-            
+            timediff = expirationDate - pytz.utc.localize(dividendDate)
+            days     = timediff.days;
 
+            if dividend <= strike * ( 1 - math.exp(riskFreeRate * -1 * (days))): optimalToExcerciseEarly.append(contract);
+            else: notOptimalToExerciseEarly.append(contract);
 
+        optionsToCalculate['excerciseEarly']    = optimalToExcerciseEarly;
+        optionsToCalculate['notExcerciseEarly'] = notOptimalToExerciseEarly;
 
-
-            
-
-
-        return 
-
+        # Calculate American Options
 
     # European Options
+    else: optionsToCalculate['options'] = options;
 
-    return 
+    pprint.pprint(optionsToCalculate)
+    return optionsToCalculate;
+
+    
