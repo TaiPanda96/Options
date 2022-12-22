@@ -1,14 +1,12 @@
 import datetime 
 import requests 
 import traceback 
-import pprint
-import math 
-import pytz
 from   bs4 import BeautifulSoup
 from   Postgres.InsertQuery import insertQuery
+from   functools import partial
 from   Postgres.GetQuery import getQuery
 from   datetime import timedelta
-from   GetOptionsChain.Formulas import laplaceDistributionCDF
+from   GetOptionsChain.Formulas import calculateEuropeanOptions
 
 """ Methodology: https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a """;
 holidays =  [
@@ -111,24 +109,18 @@ def initializeInputs(symbol):
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $ order by expiration DESC""",[symbol]);
+    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $ AND TO_CHAR(expiration, 'YYYY-MM-DD') >= '{}' order by expiration ASC LIMIT 300""".format((datetime.datetime.now()).strftime("%Y-%m-%d")),[symbol]);
     return {
         "riskFreeRate": riskFreeRate,
-        "tradingDays": holidays['numberOfTradingDays'],
-        "price": priceQuote['regularMarketPrice'],
+        "tradingDays":  holidays['numberOfTradingDays'],
+        "price":        priceQuote['regularMarketPrice'],
         "dividendDate": dividendHistory['dividendDate'],
-        "exDividend": dividendHistory['exDividend'],
-        "options": optionsContracts,
-        "logReturns": logReturns[0]['avgLogReturns'],
+        "exDividend":   dividendHistory['exDividend'],
+        "options":      optionsContracts,
+        "logReturns":   logReturns[0]['avgLogReturns'],
         "standardDeviation": logReturns[0]['standardDeviation'],
     }
 
-def calculateAmericanOptions(optionsContracts, distributionType = 'la place'):
-    return 
-
-
-def calculateEuropeanOptions(optionsContracts, distributionType = 'la place'):
-    return
 
 
 def modelCalculator(symbol):
@@ -141,33 +133,34 @@ def modelCalculator(symbol):
     tradingDays       = recipeObj['tradingDays'];
     logReturns        = recipeObj['logReturns'];
     standardDeviation = recipeObj['standardDeviation'];
+    calculationObj = {
+        "riskFreeRate": riskFreeRate,
+        "tradingDays": tradingDays,
+        "standardDeviation": standardDeviation,
+        "stockPrice": price,
+        "exDividend": dividend,
+        "logReturns": logReturns,
+        "standardDeviation": standardDeviation,
+        "exDividend": dividend,
+        "dividendDate": dividendDate
+    };
 
-    optimalToExcerciseEarly   = [];
-    notOptimalToExerciseEarly = [];
+    computedContracts = [];
 
-    optionsToCalculate = {};
-    # Evaluate Dividends Inequality to Determine Point in Time or Continous Exercise
-    if dividendDate is not None and dividend is not None:
-        # American Options
-        for contract in options:
-            strike           = contract['strike'];
-            expirationDate   = contract['expiration'];
+    for contract in options:
+        expirationDate   = contract['expiration'];
+        price = calculateEuropeanOptions({** calculationObj, ** contract});
+        computedContracts.append({
+            "expiration": expirationDate,
+            "lastPrice": contract['lastPrice'],
+            "modelPrice": price,
+            "impliedArbitrage": (price / contract['lastPrice'] -1),
+            "symbol": symbol,
+            "contractSymbol": contract['contractSymbol'],
+            "type": contract['type'],
+        });
+    return computedContracts;
 
-            timediff = expirationDate - pytz.utc.localize(dividendDate)
-            days     = timediff.days;
 
-            if dividend <= strike * ( 1 - math.exp(riskFreeRate * -1 * (days))): optimalToExcerciseEarly.append(contract);
-            else: notOptimalToExerciseEarly.append(contract);
 
-        optionsToCalculate['excerciseEarly']    = optimalToExcerciseEarly;
-        optionsToCalculate['notExcerciseEarly'] = notOptimalToExerciseEarly;
 
-        # Calculate American Options
-
-    # European Options
-    else: optionsToCalculate['options'] = options;
-
-    pprint.pprint(optionsToCalculate)
-    return optionsToCalculate;
-
-    

@@ -1,5 +1,6 @@
 from GetOptionsChain.GetOptions import updateAllOptions
 from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
+from GetOptionsChain.RemoveOldOptions import removeOldOptions
 
 from   multiprocessing import freeze_support
 import pycron 
@@ -14,6 +15,10 @@ cronJobContainer = {
     'Historical Returns': {
         'startMessage': 'Starting Historical Returns Cron',
         'function': updateAllUnderlyingSecuritiesInfo,
+    },
+    'Remove Old Data': {
+        'startMessage': 'Starting Remove Old Data Cron',
+        'function': removeOldOptions 
     }
 }
 
@@ -23,14 +28,16 @@ def cronJobInit():
         freeze_support();
         cronJobContainer['Options Cron']['function']()
         print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
-    else: return None;
 
+    if pycron.is_now('*/11 * * * *') == True:
+        print(cronJobContainer['Remove Old Data']['startMessage']);
+        cronJobContainer['Remove Old Data']['function']()
+        print('Cron Job Remove Old Data Complete for time: ', datetime.datetime.now(), '');
 
-def cronJobHistoricalReturns():
-    if pycron.is_now('*/15 * * * *') == True:
+    elif pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['Historical Returns']['startMessage']);
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
-    else: return None;
 
+    else: return None;
 

@@ -62,10 +62,10 @@ def standardizeOptionsData(optionsChain, type='call', symbol = ''):
     }
     if optionsData['expiration'] is not None:
         optionsData['expiration'] = pytz.utc.localize(
-            datetime.fromtimestamp(optionsData['expiration']).now())
+            datetime.fromtimestamp(optionsData['expiration']))
     if optionsData['lastTradeDate'] is not None:
         optionsData['lastTradeDate'] = pytz.utc.localize(
-            datetime.fromtimestamp(optionsData['lastTradeDate']).now())
+            datetime.fromtimestamp(optionsData['lastTradeDate']))
 
     return optionsData
 

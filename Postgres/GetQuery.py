@@ -42,6 +42,7 @@ def getQuery(useQuery = """ """, useValues = []):
                 useQuery = useQuery.replace("%s", "'{}'".format(value), 1);
 
         cursor.execute(useQuery);
+        print(cursor.mogrify(useQuery, useValues));
         results  = cursor.fetchall();
         colnames = [desc[0] for desc in cursor.description];
         connection.commit();
