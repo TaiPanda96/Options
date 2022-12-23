@@ -38,7 +38,8 @@ def calculateEuropeanOptions(calculationObj = {}):
     mU   = calculationObj['logReturns'];
     mStd = calculationObj['standardDeviation'];
 
-    timeToExpiration = (T - t).days / tradingDays
+    timeToExpiration = (T - t).days / tradingDays;
+    if timeToExpiration == 0 or timeToExpiration < 0: return None;
     d1 = (np.log(S/X) + (r + (std ** 2) / 2) * timeToExpiration) / (std * np.sqrt(timeToExpiration));
     d2 = d1 - (std * np.sqrt(timeToExpiration));
 

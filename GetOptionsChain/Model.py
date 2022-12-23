@@ -1,6 +1,7 @@
 import datetime 
 import requests 
 import traceback 
+import pytz
 from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
 from   bs4 import BeautifulSoup
@@ -39,12 +40,14 @@ def getPriceQuote(symbol):
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            quoteStore = response.json() if response else None;
-            if quoteStore is None: return None;
-            quote = quoteStore.get('quoteResponse', {}).get('result', [])[0];
+            quoteStore = response.json();
+            quote = quoteStore.get('quoteResponse', {});
+            if quote is None or len(quote) == 0: return None
+            useQuote = quote.get('result', []);
+            if useQuote is None or len(useQuote) == 0: return None
             return {
-                "symbol": quote.get('symbol', ''),
-                "regularMarketPrice": quote.get('regularMarketPrice', 0.0),
+                "symbol": useQuote[0].get('symbol', ''),
+                "regularMarketPrice": useQuote[0].get('regularMarketPrice', 0.0),
             }
 
         else:
@@ -88,8 +91,10 @@ def getDividendHistory(symbol):
         if response.status_code == 200:
             quoteStore = response.json() if response else None;
             if quoteStore is None: return None;
-            quote = quoteStore.get('data', {});
-            dividends = quote['dividends']['rows'];
+            quote = quoteStore.get('data', None);
+            if quote is None: return { "dividendDate": None, "exDividend": None}
+            dividends = quote.get('dividends', {}).get('rows', [])
+            if dividends is None or len(dividends) == 0: return { "dividendDate": None, "exDividend": None };
             return {
                 "dividendDate": datetime.datetime.strptime(dividends[0]['exOrEffDate'], '%m/%d/%Y'),
                 "exDividend": float(dividends[0]['amount'].replace('$', '')),
@@ -109,15 +114,18 @@ def initializeInputs(symbol):
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
     optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $ AND TO_CHAR(expiration, 'YYYY-MM-DD') >= '{}' order by expiration ASC LIMIT 300""".format((datetime.datetime.now()).strftime("%Y-%m-%d")),[symbol]);
+    
+    if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: return None;
+    
     return {
         "riskFreeRate": riskFreeRate,
-        "tradingDays":  holidays['numberOfTradingDays'],
-        "price":        priceQuote['regularMarketPrice'],
-        "dividendDate": dividendHistory['dividendDate'],
-        "exDividend":   dividendHistory['exDividend'],
-        "options":      optionsContracts,
-        "logReturns":   logReturns[0]['avgLogReturns'],
-        "standardDeviation": logReturns[0]['standardDeviation'],
+        "tradingDays":  holidays.get('numberOfTradingDays', 252) if holidays else 252,
+        "price":        priceQuote.get('regularMarketPrice', None) if priceQuote else None,
+        "dividendDate": dividendHistory.get('dividendDate', None) if dividendHistory else None,
+        "exDividend":   dividendHistory.get('exDividend', None) if dividendHistory else None,
+        "options":      optionsContracts if len(optionsContracts) > 0 else [],
+        "logReturns":   logReturns[0]['avgLogReturns'] if len(logReturns) > 0 else None,
+        "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else None,
     }
 
 
@@ -125,14 +133,19 @@ def initializeInputs(symbol):
 def modelCalculator(symbol):
     computedContracts = [];
     recipeObj         = initializeInputs(symbol);
-    dividend          = recipeObj['exDividend'];
-    riskFreeRate      = recipeObj['riskFreeRate'];
-    options           = recipeObj['options'];
-    dividendDate      = recipeObj['dividendDate'];
-    price             = recipeObj['price'];
-    tradingDays       = recipeObj['tradingDays'];
-    logReturns        = recipeObj['logReturns'];
-    standardDeviation = recipeObj['standardDeviation'];
+    dividend          = recipeObj.get('exDividend', None)
+    riskFreeRate      = recipeObj.get('riskFreeRate', None)
+    options           = recipeObj.get('options', None);
+    dividendDate      = recipeObj.get('dividendDate', None)
+    price             = recipeObj.get('price', None)
+    tradingDays       = recipeObj.get('tradingDays',None)
+    logReturns        = recipeObj.get('logReturns',None)
+    standardDeviation = recipeObj.get('standardDeviation', None)
+
+    if any([riskFreeRate, tradingDays, standardDeviation, price, dividend, dividendDate, logReturns]) is None:
+        print('Missing required inputs for the model calculator:', symbol)
+        return None;
+
     calculationObj = {
         "riskFreeRate": riskFreeRate,
         "tradingDays": tradingDays,
@@ -145,27 +158,46 @@ def modelCalculator(symbol):
         "dividendDate": dividendDate
     };
 
+
     for contract in options:
         expirationDate   = contract['expiration'];
-        price = calculateEuropeanOptions({** calculationObj, ** contract});
-        computedContracts.append({
-            "expiration": expirationDate,
-            "lastPrice": contract['lastPrice'],
-            "modelPrice": price,
-            "priceDifference": (price / contract['lastPrice'] -1),
+        recipeDate       = int(datetime.datetime(expirationDate.year, expirationDate.month, expirationDate.day, 0, 0, 0, 0).timestamp());
+        # to UTC
+        useExpirationDate   = pytz.utc.localize(datetime.datetime.fromtimestamp(recipeDate));
+        optionPrice = calculateEuropeanOptions({** calculationObj, ** contract});
+        if optionPrice is None: continue;
+        priceDifference = (optionPrice / contract['lastPrice'] -1) if optionPrice is not None else None;
+        obj = {
+            "type": contract['type'],
             "symbol": symbol,
             "contractSymbol": contract['contractSymbol'],
-            "type": contract['type'],
-        });
+            "lastPrice": float(contract.get('lastPrice', None)) if contract.get('lastPrice', None) is not None else None,
+            "modelPrice": optionPrice,
+            "priceDifference": priceDifference,
+            "expiration": useExpirationDate,
+            "impliedVolatility": contract['impliedVolatility'],
+        }
+        # print('Last Price', contract['lastPrice'], 'Model Price', optionPrice, 'Price Difference', priceDifference, 'Expiration', useExpirationDate, 'Implied Volatility', contract['impliedVolatility'])
+        computedContracts.append(obj);
 
     # Insert the computed contracts into the database.
-    insertQuery('options',['expiration', 'lastPrice', 'modelPrice', 'priceDifference', 'symbol', 'contractSymbol','type'],computedContracts);
-    return computedContracts;
+    insertQuery('priced_options',
+    [
+        'type',
+        'symbol',
+        'contractSymbol',
+        'lastPrice',
+        'modelPrice',
+        'priceDifference',
+        'expiration',
+        'impliedVolatility'
+    ],[tuple(i.values()) for i in computedContracts]);
+    print('Completed model calculations for:', symbol);
 
 
 
 def updateAllModelCalculatedOptions():
-    tickers = getQuery("SELECT DISTINCT symbol FROM options WHERE symbol NOT IN (SELECT DISTINCT symbol FROM options_model_calculated) LIMIT 1000");
+    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
     pool    = Pool(processes=4);
-    pool.map(modelCalculator, [ticker['symbol'] for ticker in tickers]);
+    pool.map(modelCalculator, tickers);
     pool.close();
