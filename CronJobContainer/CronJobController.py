@@ -1,7 +1,7 @@
 from GetOptionsChain.GetOptions import updateAllOptions 
 from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
 from GetOptionsChain.RemoveOldOptions import removeOldOptions
-from GetOptionsChain.Model import modelCalculator
+from GetOptionsChain.Model import updateAllModelCalculatedOptions
 
 from   multiprocessing import freeze_support
 import pycron 
@@ -23,7 +23,7 @@ cronJobContainer = {
     },
     'Options Calculator': {
         'startMessage': 'Starting Options Calculator Cron',
-        'function': modelCalculator
+        'function': updateAllModelCalculatedOptions
     }
 }
 
@@ -44,11 +44,11 @@ def cronJobInit():
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
 
-    # elif pycron.is_now('*/20 * * * *') == True:
-    #     print(cronJobContainer['Options Calculator']['startMessage']);
-    #     freeze_support();
-    #     cronJobContainer['Options Calculator']['function']()
-    #     print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
+    elif pycron.is_now('*/20 * * * *') == True:
+        print(cronJobContainer['Options Calculator']['startMessage']);
+        freeze_support();
+        cronJobContainer['Options Calculator']['function']()
+        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
     else: return None;
 
