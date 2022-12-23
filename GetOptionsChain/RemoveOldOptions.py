@@ -1,7 +1,10 @@
 from Postgres.GetQuery import getQuery
+from datetime import datetime, timedelta
 
 def removeOldOptions():
-    useQuery = """
-        DELETE FROM options WHERE expiration < now() - interval '1 day';
-    """
-    return getQuery(useQuery);
+    queryDate = datetime.today() - timedelta(days=2) - timedelta(hours=5);
+    useQuery  = """SELECT FROM options WHERE expiration < '{}'""".format(queryDate);
+    oldData   = getQuery(useQuery, []);
+    if (len(oldData) == 0): return;
+    deleteQuery = """DELETE FROM options WHERE expiration < '{}'""".format(queryDate);
+    getQuery(deleteQuery, []);

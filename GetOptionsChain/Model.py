@@ -1,11 +1,9 @@
 import datetime 
 import requests 
 import traceback 
-from   bs4 import BeautifulSoup
 from   Postgres.InsertQuery import insertQuery
-from   functools import partial
 from   Postgres.GetQuery import getQuery
-from   datetime import timedelta
+from   bs4 import BeautifulSoup
 from   GetOptionsChain.Formulas import calculateEuropeanOptions
 
 """ Methodology: https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a """;
@@ -124,6 +122,7 @@ def initializeInputs(symbol):
 
 
 def modelCalculator(symbol):
+    computedContracts = [];
     recipeObj         = initializeInputs(symbol);
     dividend          = recipeObj['exDividend'];
     riskFreeRate      = recipeObj['riskFreeRate'];
@@ -145,7 +144,6 @@ def modelCalculator(symbol):
         "dividendDate": dividendDate
     };
 
-    computedContracts = [];
 
     for contract in options:
         expirationDate   = contract['expiration'];

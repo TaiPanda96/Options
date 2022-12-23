@@ -1,6 +1,7 @@
-from GetOptionsChain.GetOptions import updateAllOptions
+from GetOptionsChain.GetOptions import updateAllOptions 
 from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
 from GetOptionsChain.RemoveOldOptions import removeOldOptions
+from GetOptionsChain.Model import modelCalculator
 
 from   multiprocessing import freeze_support
 import pycron 
@@ -19,6 +20,10 @@ cronJobContainer = {
     'Remove Old Data': {
         'startMessage': 'Starting Remove Old Data Cron',
         'function': removeOldOptions 
+    },
+    'Options Calculator': {
+        'startMessage': 'Starting Options Calculator Cron',
+        'function': modelCalculator
     }
 }
 
@@ -38,6 +43,11 @@ def cronJobInit():
         print(cronJobContainer['Historical Returns']['startMessage']);
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
+
+    elif pycron.is_now('*/20 * * * *') == True:
+        print(cronJobContainer['Options Calculator']['startMessage']);
+        cronJobContainer['Options Calculator']['function']()
+        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
     else: return None;
 
