@@ -44,10 +44,11 @@ def cronJobInit():
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
 
-    elif pycron.is_now('*/20 * * * *') == True:
-        print(cronJobContainer['Options Calculator']['startMessage']);
-        cronJobContainer['Options Calculator']['function']()
-        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
+    # elif pycron.is_now('*/20 * * * *') == True:
+    #     print(cronJobContainer['Options Calculator']['startMessage']);
+    #     freeze_support();
+    #     cronJobContainer['Options Calculator']['function']()
+    #     print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
     else: return None;
 

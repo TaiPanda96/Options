@@ -5,6 +5,7 @@ from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
 from   bs4 import BeautifulSoup
 from   GetOptionsChain.Formulas import calculateEuropeanOptions
+from   multiprocessing import Pool
 
 """ Methodology: https://www.cantorsparadise.com/the-black-scholes-formula-explained-9e05b7865d8a """;
 holidays =  [
@@ -144,7 +145,6 @@ def modelCalculator(symbol):
         "dividendDate": dividendDate
     };
 
-
     for contract in options:
         expirationDate   = contract['expiration'];
         price = calculateEuropeanOptions({** calculationObj, ** contract});
@@ -152,13 +152,20 @@ def modelCalculator(symbol):
             "expiration": expirationDate,
             "lastPrice": contract['lastPrice'],
             "modelPrice": price,
-            "impliedArbitrage": (price / contract['lastPrice'] -1),
+            "priceDifference": (price / contract['lastPrice'] -1),
             "symbol": symbol,
             "contractSymbol": contract['contractSymbol'],
             "type": contract['type'],
         });
+
+    # Insert the computed contracts into the database.
+    insertQuery('options',['expiration', 'lastPrice', 'modelPrice', 'priceDifference', 'symbol', 'contractSymbol','type'],computedContracts);
     return computedContracts;
 
 
 
-
+def updateAllModelCalculatedOptions():
+    tickers = getQuery("SELECT DISTINCT symbol FROM options WHERE symbol NOT IN (SELECT DISTINCT symbol FROM options_model_calculated) LIMIT 1000");
+    pool    = Pool(processes=4);
+    pool.map(modelCalculator, [ticker['symbol'] for ticker in tickers]);
+    pool.close();
