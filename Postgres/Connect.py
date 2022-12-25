@@ -25,7 +25,4 @@ def connect(unitTest = False):
         # create a cursor
         return conn
     except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
+        print(error);
