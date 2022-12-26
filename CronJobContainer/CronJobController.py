@@ -44,7 +44,7 @@ def cronJobInit():
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
 
-    elif pycron.is_now('*/20 * * * *') == True:
+    elif pycron.is_now('*/25 * * * *') == True:
         print(cronJobContainer['Options Calculator']['startMessage']);
         freeze_support();
         cronJobContainer['Options Calculator']['function']()
