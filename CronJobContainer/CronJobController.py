@@ -34,10 +34,10 @@ def cronJobInit():
         cronJobContainer['Options Cron']['function']()
         print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
 
-    if pycron.is_now('*/11 * * * *') == True:
-        print(cronJobContainer['Remove Old Data']['startMessage']);
-        cronJobContainer['Remove Old Data']['function']()
-        print('Cron Job Remove Old Data Complete for time: ', datetime.datetime.now(), '');
+    # if pycron.is_now('*/11 * * * *') == True:
+    #     print(cronJobContainer['Remove Old Data']['startMessage']);
+    #     cronJobContainer['Remove Old Data']['function']()
+    #     print('Cron Job Remove Old Data Complete for time: ', datetime.datetime.now(), '');
 
     elif pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['Historical Returns']['startMessage']);
