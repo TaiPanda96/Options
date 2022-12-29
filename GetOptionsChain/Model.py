@@ -192,7 +192,7 @@ def modelCalculator(symbol):
         'expiration',
         'impliedVolatility'
     ],[tuple(i.values()) for i in computedContracts]);
-    print('Completed model calculations for:', symbol);
+    print('Completed model calculations for:', symbol, 'at', datetime.datetime.now());
 
 
 
