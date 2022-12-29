@@ -12,6 +12,7 @@ cronJobContainer = {
     'Historical Returns': {
         'startMessage': 'Starting Historical Returns Cron',
         'function': updateAllUnderlyingSecuritiesInfo,
+        'freeze_support': False,
     },
     'Options Calculator': {
         'startMessage': 'Starting Options Calculator Cron',
@@ -20,7 +21,8 @@ cronJobContainer = {
     },
     'Remove Old Data': {
         'startMessage': 'Starting Remove Old Data Cron',
-        'function': removeOldOptions 
+        'function': removeOldOptions,
+        'freeze_support': False,
     },
 }
 
