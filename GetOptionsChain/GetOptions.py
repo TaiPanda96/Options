@@ -118,7 +118,7 @@ def updateOptionsData(symbol = 'TSLA'):
         traceback.print_exc()
 
     finally:
-        print('Update completed for {} options'.format(symbol))
+        print('Update completed for {} options at {}'.format(symbol, datetime.now()))
 
 
 def updateAllOptions():

@@ -9,7 +9,7 @@ if __name__ == '__main__':
         for cronJob in cronJobContainer:
             if cronJobContainer[cronJob]['freeze_support'] == True:
                 freeze_support()
-            cronJobContainer[cronJob]['function']()
+            cronJobContainer[cronJob]['function']();
         loopNumber += 1;
 
         print('Completed...', loopNumber, 'loops')
