@@ -1,6 +1,5 @@
 from GetOptionsChain.GetOptions import updateAllOptions 
 from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
-from GetOptionsChain.RemoveOldOptions import removeOldOptions
 from GetOptionsChain.Model import updateAllModelCalculatedOptions
 
 cronJobContainer = {
