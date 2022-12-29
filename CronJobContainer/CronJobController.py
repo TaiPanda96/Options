@@ -19,10 +19,5 @@ cronJobContainer = {
         'function': updateAllModelCalculatedOptions,
         'freeze_support': True,
     },
-    'Remove Old Data': {
-        'startMessage': 'Starting Remove Old Data Cron',
-        'function': removeOldOptions,
-        'freeze_support': False,
-    },
 }
 

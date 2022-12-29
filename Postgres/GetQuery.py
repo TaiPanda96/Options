@@ -43,6 +43,7 @@ def getQuery(useQuery = """ """, useValues = []):
 
         cursor.execute(useQuery);
         if debug: print(cursor.mogrify(useQuery, useValues));
+        if cursor.arraysize == 0: return [];
         # Check if query returned results
         results  = cursor.fetchall();
         if (results is None) or len(results) == 0: return [];
