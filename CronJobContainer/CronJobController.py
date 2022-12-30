@@ -32,13 +32,6 @@ def cronJobInit():
         cronJobContainer['Options Calculator']['function']();
         print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
-    elif pycron.is_now('*/5 * * * *') == True:
-        print(cronJobContainer['Options Cron']['startMessage']);
-        freeze_support();
-        cronJobContainer['Options Cron']['function']();
-        cronJobContainer['Options Calculator']['function']();
-        print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
-
     elif pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['Historical Returns']['startMessage']);
         cronJobContainer['Historical Returns']['function']()
@@ -46,3 +39,9 @@ def cronJobInit():
 
     else: return None;
 
+
+def optionsCalculatorCronJob():
+    print('Starting Options Calculator Cron');
+    freeze_support();
+    updateAllModelCalculatedOptions();
+    print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
