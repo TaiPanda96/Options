@@ -6,4 +6,4 @@ import time
 if __name__ == '__main__':
     while True:
         cronJobInit();
-        time.sleep(60);
+        time.sleep(30);
