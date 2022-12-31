@@ -113,7 +113,7 @@ def initializeInputs(symbol):
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = $ AND expiration >= '{}' LIMIT 300".format(datetime.datetime.now()),[symbol]);
+    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = $ AND expiration >= '{}' ORDER BY expiration ASC LIMIT 300".format(datetime.datetime.now()),[symbol]);
     
     if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: return None;
     
@@ -158,6 +158,7 @@ def modelCalculator(symbol):
         "exDividend": dividend,
         "dividendDate": dividendDate
     };
+    
 
     for contract in options:
         expirationDate   = contract['expiration'];
