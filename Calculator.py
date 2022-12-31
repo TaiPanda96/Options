@@ -1,6 +1,5 @@
-from GetOptionsChain.Model import updateAllModelCalculatedOptions
+from GetOptionsChain.Model import updateAllModelCalculatedOptions, modelCalculator
 from multiprocessing import freeze_support
 
 if __name__ == '__main__':
-    freeze_support();
-    updateAllModelCalculatedOptions();
+    modelCalculator('TSLA')
