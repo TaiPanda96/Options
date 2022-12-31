@@ -202,6 +202,4 @@ def modelCalculator(symbol):
 
 def updateAllModelCalculatedOptions():
     tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
-    pool    = Pool(processes=4);
-    pool.map(modelCalculator, tickers);
-    pool.close();
+    return list(map(modelCalculator, tickers))
