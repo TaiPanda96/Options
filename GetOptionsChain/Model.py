@@ -113,7 +113,7 @@ def initializeInputs(symbol):
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("""SELECT * FROM options WHERE symbol = $ AND TO_CHAR(expiration, 'YYYY-MM-DD') >= '{}' order by expiration ASC LIMIT 300""".format((datetime.datetime.now()).strftime("%Y-%m-%d")),[symbol]);
+    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = $ AND expiration >= '{}' LIMIT 300".format(datetime.datetime.now()),[symbol]);
     
     if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: return None;
     
@@ -133,6 +133,7 @@ def initializeInputs(symbol):
 def modelCalculator(symbol):
     computedContracts = [];
     recipeObj         = initializeInputs(symbol);
+    if recipeObj is None: return None;
     dividend          = recipeObj.get('exDividend', None)
     riskFreeRate      = recipeObj.get('riskFreeRate', None)
     options           = recipeObj.get('options', None);
@@ -158,7 +159,6 @@ def modelCalculator(symbol):
         "dividendDate": dividendDate
     };
 
-
     for contract in options:
         expirationDate   = contract['expiration'];
         recipeDate       = int(datetime.datetime(expirationDate.year, expirationDate.month, expirationDate.day, 0, 0, 0, 0).timestamp());
@@ -180,6 +180,9 @@ def modelCalculator(symbol):
         # print('Last Price', contract['lastPrice'], 'Model Price', optionPrice, 'Price Difference', priceDifference, 'Expiration', useExpirationDate, 'Implied Volatility', contract['impliedVolatility'])
         computedContracts.append(obj);
 
+    # deduplicate the computed contracts
+    useComputedContracts = [dict(t) for t in {tuple(d.items()) for d in computedContracts}];
+
     # Insert the computed contracts into the database.
     insertQuery('priced_options',
     [
@@ -191,7 +194,7 @@ def modelCalculator(symbol):
         'priceDifference',
         'expiration',
         'impliedVolatility'
-    ],[tuple(i.values()) for i in computedContracts]);
+    ],[tuple(i.values()) for i in useComputedContracts]);
     print('Completed model calculations for:', symbol, 'at', datetime.datetime.now());
 
 

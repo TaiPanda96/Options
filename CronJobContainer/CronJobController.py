@@ -1,23 +1,22 @@
 from GetOptionsChain.GetOptions import updateAllOptions 
 from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesInfo
 from GetOptionsChain.Model import updateAllModelCalculatedOptions
-
+import datetime
 import pycron
-import datetime 
 from multiprocessing import freeze_support
 
 cronJobContainer = {
-    'Options Cron': {
+    'fetch': {
         'startMessage': 'Starting Options Cron',
         'function': updateAllOptions,
         'freeze_support': True,
     },
-    'Options Calculator': {
+    'calculator': {
         'startMessage': 'Starting Options Calculator Cron',
         'function': updateAllModelCalculatedOptions,
         'freeze_support': True,
     },
-    'Historical Returns': {
+    'returns': {
         'startMessage': 'Starting Historical Returns Cron',
         'function': updateAllUnderlyingSecuritiesInfo,
         'freeze_support': False,
@@ -25,19 +24,22 @@ cronJobContainer = {
 
 }
 
+def cronJobInit():
+    if pycron.is_now('*/5 * * * *') == True:
+        print('Cron job for options fetch starting at: ', datetime.datetime.now(), '');
+        freeze_support();
+        cronJobContainer['fetch']['function']();
+        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
-def historicalReturnsCronJob():
-    print(cronJobContainer['Historical Returns']['startMessage']);
-    cronJobContainer['Historical Returns']['function']()
-    print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
+    elif pycron.is_now('*/10 * * * *') == True:
+        print(cronJobContainer['calculator']['startMessage']);
+        freeze_support();
+        cronJobContainer['calculator']['function']();
+        print('Cron job calculator completed: ', datetime.datetime.now(), '');
 
-def optionsFetchCronJob():
-    freeze_support();
-    cronJobContainer['Options Cron']['function']();
-    print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
+    elif pycron.is_now('*/15 * * * *') == True:
+        print(cronJobContainer['returns']['startMessage']);
+        cronJobContainer['Historical Returns']['function']()
+        print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
 
-def optionsCalculatorCronJob():
-    print('Starting Options Calculator');
-    freeze_support();
-    updateAllModelCalculatedOptions();
-    print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
+    else: return None;
