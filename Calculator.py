@@ -1,3 +1,4 @@
 from GetOptionsChain.Model import updateAllModelCalculatedOptions
 
-updateAllModelCalculatedOptions();
+if __name__ == '__main__':
+    updateAllModelCalculatedOptions;

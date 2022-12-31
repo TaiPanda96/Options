@@ -31,7 +31,7 @@ def cronJobInit():
         cronJobContainer['fetch']['function']();
         print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
 
-    elif pycron.is_now('*/15 * * * *') == True:
+    elif pycron.is_now('*/10 * * * *') == True:
         print(cronJobContainer['returns']['startMessage']);
         cronJobContainer['Historical Returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
