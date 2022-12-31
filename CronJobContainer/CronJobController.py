@@ -25,20 +25,16 @@ cronJobContainer = {
 
 }
 
-def cronJobInit():
-    if pycron.is_now('*/5 * * * *') == True:
-        print('Cron Job 5 Minute Complete for time: ', datetime.datetime.now(), '');
-        freeze_support();
-        cronJobContainer['Options Calculator']['function']();
-        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
-    elif pycron.is_now('*/15 * * * *') == True:
-        print(cronJobContainer['Historical Returns']['startMessage']);
-        cronJobContainer['Historical Returns']['function']()
-        print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
+def historicalReturnsCronJob():
+    print(cronJobContainer['Historical Returns']['startMessage']);
+    cronJobContainer['Historical Returns']['function']()
+    print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
 
-    else: return None;
-
+def optionsFetchCronJob():
+    freeze_support();
+    cronJobContainer['Options Calculator']['function']();
+    print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
 def optionsCalculatorCronJob():
     print('Starting Options Calculator Cron');
