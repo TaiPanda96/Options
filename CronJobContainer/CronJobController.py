@@ -29,13 +29,13 @@ def cronJobInit():
         print('Cron job for options fetch starting at: ', datetime.datetime.now(), '');
         freeze_support();
         cronJobContainer['fetch']['function']();
-        print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
+        print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
 
     elif pycron.is_now('*/10 * * * *') == True:
         print(cronJobContainer['calculator']['startMessage']);
         freeze_support();
         cronJobContainer['calculator']['function']();
-        print('Cron job calculator completed: ', datetime.datetime.now(), '');
+        print('Cron Job Calculator completed: ', datetime.datetime.now(), '');
 
     elif pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['returns']['startMessage']);
