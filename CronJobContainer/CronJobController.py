@@ -33,11 +33,11 @@ def historicalReturnsCronJob():
 
 def optionsFetchCronJob():
     freeze_support();
-    cronJobContainer['Options Calculator']['function']();
+    cronJobContainer['Options Cron']['function']();
     print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
 
 def optionsCalculatorCronJob():
-    print('Starting Options Calculator Cron');
+    print('Starting Options Calculator');
     freeze_support();
     updateAllModelCalculatedOptions();
     print('Cron Job Options Calculator Complete for time: ', datetime.datetime.now(), '');
