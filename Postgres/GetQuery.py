@@ -4,7 +4,7 @@ from   datetime import datetime
 from   Postgres.Connect import connect
 import decimal
 
-debug = False;
+debug = True;
 
 def queryDecorator(func):
     def wrapper(*args, **kwargs):
