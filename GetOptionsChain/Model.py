@@ -52,6 +52,7 @@ def getPriceQuote(symbol):
             }
 
         else:
+            print('Error Price Quote: ', response.status_code)
             return None
     except Exception as e:
         print(e)
@@ -71,6 +72,7 @@ def getRiskFreeRate():
             if price is not None: return float(price.text.strip().replace('%', '')) / 100;
             else: return None
         else:
+            print('Error Risk Free Rate: ', response.status_code)
             return None
 
     except Exception as e:
@@ -102,6 +104,7 @@ def getDividendHistory(symbol):
             }
 
         else:
+            print('Error Dividend History: ', response.status_code)
             return None
     except Exception as e:
         print(e)
