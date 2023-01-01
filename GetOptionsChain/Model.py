@@ -2,6 +2,7 @@ import datetime
 import requests 
 import traceback 
 import pytz
+import pprint 
 from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
 from   bs4 import BeautifulSoup
@@ -115,7 +116,18 @@ def initializeInputs(symbol):
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
     optionsContracts = getQuery("SELECT * FROM options WHERE symbol = $ AND expiration >= '{}' ORDER BY expiration ASC LIMIT 300".format(datetime.datetime.now()),[symbol]);
     
-    if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: return None;
+    if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: 
+        print('Missing data', {
+            "riskFreeRate": riskFreeRate,
+            "tradingDays":  holidays.get('numberOfTradingDays', 252) if holidays else 252,
+            "price":        priceQuote.get('regularMarketPrice', None) if priceQuote else None,
+            "dividendDate": dividendHistory.get('dividendDate', None) if dividendHistory else None,
+            "exDividend":   dividendHistory.get('exDividend', None) if dividendHistory else None,
+            "options":      optionsContracts if len(optionsContracts) > 0 else [],
+            "logReturns":   logReturns[0]['avgLogReturns'] if len(logReturns) > 0 else None,
+            "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else None,
+        })
+        return None;
     
     return {
         "riskFreeRate": riskFreeRate,
@@ -167,7 +179,7 @@ def modelCalculator(symbol):
         useExpirationDate   = pytz.utc.localize(datetime.datetime.fromtimestamp(recipeDate));
         optionPrice = calculateEuropeanOptions({** calculationObj, ** contract});
         if optionPrice is None: continue;
-        priceDifference = (optionPrice / contract['lastPrice'] -1) if optionPrice is not None else None;
+        priceDifference = (optionPrice - contract['lastPrice']) / (contract['lastPrice']) if optionPrice is not None else None;
         obj = {
             "type": contract['type'],
             "symbol": symbol,
@@ -178,7 +190,7 @@ def modelCalculator(symbol):
             "expiration": useExpirationDate,
             "impliedVolatility": contract['impliedVolatility'],
         }
-        # print('Last Price', contract['lastPrice'], 'Model Price', optionPrice, 'Price Difference', priceDifference, 'Expiration', useExpirationDate, 'Implied Volatility', contract['impliedVolatility'])
+        print('Last Price', contract['lastPrice'], 'Model Price', optionPrice, 'Price Difference', priceDifference)
         computedContracts.append(obj);
 
     # deduplicate the computed contracts
