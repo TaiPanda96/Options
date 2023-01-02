@@ -2,7 +2,6 @@ import datetime
 import requests 
 import traceback 
 import pytz
-import pprint 
 from   Postgres.InsertQuery import insertQuery
 from   Postgres.GetQuery import getQuery
 from   bs4 import BeautifulSoup
@@ -26,7 +25,7 @@ holidays =  [
     ]
 
 headers = { 
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
+        'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3',
         'authority': 'www.cnbc.com',
         'pragma': 'no-cache',
         'cache-control': 'no-cache',
@@ -39,7 +38,7 @@ def getPriceQuote(symbol):
     """ This function returns the price quote for a given stock symbol. """
     url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols={}'.format(symbol)
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers);
         if response.status_code == 200:
             quoteStore = response.json();
             quote = quoteStore.get('quoteResponse', {});
@@ -67,10 +66,14 @@ def getRiskFreeRate():
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser');
             priceContainer = soup.find('div', class_='QuoteStrip-lastPriceStripContainer');
-            if priceContainer is None: return 
+            if priceContainer is None: 
+                print('no price')
+                return 
             price = priceContainer.find('span', class_='QuoteStrip-lastPrice');
             if price is not None: return float(price.text.strip().replace('%', '')) / 100;
-            else: return None
+            else: 
+                print('no price')
+                return None
         else:
             print('Error Risk Free Rate: ', response.status_code)
             return None
@@ -90,7 +93,7 @@ def getDividendHistory(symbol):
     """ This function returns the dividend history for a given stock symbol. """
     url = 'https://api.nasdaq.com/api/quote/{}/dividends?assetclass=stocks'.format(symbol)
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers);
         if response.status_code == 200:
             quoteStore = response.json() if response else None;
             if quoteStore is None: return None;
@@ -193,7 +196,6 @@ def modelCalculator(symbol):
             "expiration": useExpirationDate,
             "impliedVolatility": contract['impliedVolatility'],
         }
-        print('Last Price', contract['lastPrice'], 'Model Price', optionPrice, 'Price Difference', priceDifference)
         computedContracts.append(obj);
 
     # deduplicate the computed contracts
@@ -214,7 +216,8 @@ def modelCalculator(symbol):
     print('Completed model calculations for:', symbol, 'at', datetime.datetime.now());
 
 
-
 def updateAllModelCalculatedOptions():
     tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
-    return list(map(modelCalculator, tickers))
+    pool = Pool(processes=4);
+    pool.map(modelCalculator, tickers);
+    pool.close();

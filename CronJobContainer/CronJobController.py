@@ -14,7 +14,7 @@ cronJobContainer = {
     'calculator': {
         'startMessage': 'Starting Options Calculator Cron',
         'function': updateAllModelCalculatedOptions,
-        'freeze_support': False,
+        'freeze_support': True,
     },
     'returns': {
         'startMessage': 'Starting Historical Returns Cron',
@@ -33,7 +33,13 @@ def cronJobInit():
 
     elif pycron.is_now('*/10 * * * *') == True:
         print(cronJobContainer['returns']['startMessage']);
-        cronJobContainer['Historical Returns']['function']()
+        cronJobContainer['returns']['function']()
         print('Cron Job Historical Returns Complete for time: ', datetime.datetime.now(), '');
+
+    elif pycron.is_now('*/15 * * * *') == True:
+        print(cronJobContainer['calculator']['startMessage']);
+        if cronJobContainer['calculator']['freeze_support'] == True: freeze_support();
+        cronJobContainer['calculator']['function']();
+        print('Cron Job Model Calculator Complete for time: ', datetime.datetime.now(), '');
 
     else: return None;

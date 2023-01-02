@@ -1,10 +1,9 @@
 import traceback
-import pytz
 from   datetime import datetime
 from   Postgres.Connect import connect
 import decimal
 
-debug = True;
+debug = False;
 
 def queryDecorator(func):
     def wrapper(*args, **kwargs):
@@ -27,7 +26,8 @@ def queryDecorator(func):
 @queryDecorator
 def getQuery(useQuery = """ """, useValues = []):
     connection = connect(); 
-    if (connection is None): return;
+    if (connection is None): 
+        print('Unable to connect to the database');
     if (len(useQuery)  == 0): return;
     try: 
         cursor = connection.cursor();
