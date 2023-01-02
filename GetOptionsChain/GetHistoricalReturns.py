@@ -28,7 +28,6 @@ def getHistoricalPrices(symbol):
             if quoteStore is None: return None;
             quote = quoteStore.get('data', {});
             historicalPrices = quote['chart'];
-            print(historicalPrices)
             return historicalPrices
         else:
             return None
