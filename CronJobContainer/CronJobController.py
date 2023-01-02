@@ -3,7 +3,6 @@ from GetOptionsChain.GetHistoricalReturns import updateAllUnderlyingSecuritiesIn
 from GetOptionsChain.Model import updateAllModelCalculatedOptions
 import datetime
 import pycron
-from multiprocessing import freeze_support
 
 cronJobContainer = {
     'fetch': {
@@ -27,7 +26,6 @@ cronJobContainer = {
 def cronJobInit():
     if pycron.is_now('*/5 * * * *') == True:
         print('Cron job for options fetch starting at: ', datetime.datetime.now(), '');
-        freeze_support();
         cronJobContainer['fetch']['function']();
         print('Cron Job Options Complete for time: ', datetime.datetime.now(), '');
 
@@ -38,7 +36,6 @@ def cronJobInit():
 
     elif pycron.is_now('*/15 * * * *') == True:
         print(cronJobContainer['calculator']['startMessage']);
-        if cronJobContainer['calculator']['freeze_support'] == True: freeze_support();
         cronJobContainer['calculator']['function']();
         print('Cron Job Model Calculator Complete for time: ', datetime.datetime.now(), '');
 

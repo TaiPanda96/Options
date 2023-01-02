@@ -26,7 +26,8 @@ columns = [
     'inTheMoney'
 ];
 
-def getOptionsChain(symbol='AAPL'):
+def getOptionsChain(symbol=None):
+    if symbol is None: symbol = 'AAPL';
     try:
         url = 'https://kf1wexbj85.execute-api.us-east-2.amazonaws.com/Prod/get-options?ticker={}'.format(
             symbol)
@@ -69,7 +70,8 @@ def standardizeOptionsData(optionsChain, type='call', symbol = ''):
 
     return optionsData
 
-def updateOptionsData(symbol = 'TSLA'):
+def updateOptionsData(symbol = None):
+    if symbol is None: symbol = 'AAPL'
     updateCalls = []
     updatePuts  = []
     try:

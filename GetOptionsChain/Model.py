@@ -113,26 +113,16 @@ def getDividendHistory(symbol):
         print(e)
         traceback.print_exc()
 
-
 def initializeInputs(symbol):
     riskFreeRate     = getRiskFreeRate();
     holidays         = getPublicylyListedHolidays();
     priceQuote       = getPriceQuote(symbol);
     dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("SELECT * FROM options WHERE symbol = $ AND expiration >= '{}' LIMIT 300".format(datetime.datetime.now()),[symbol]);
+    optionsContracts = getQuery("""SELECT a.* FROM options a LEFT JOIN priced_options b ON a."contractSymbol" = b."contractSymbol" WHERE b."lastPrice" is NULL AND a."symbol" = $ AND a."expiration" >= '{}' LIMIT 300 """.format(datetime.datetime.now()),[symbol]);
     
     if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: 
-        print('Missing data', {
-            "riskFreeRate": riskFreeRate,
-            "tradingDays":  holidays.get('numberOfTradingDays', 252) if holidays else 252,
-            "price":        priceQuote.get('regularMarketPrice', None) if priceQuote else None,
-            "dividendDate": dividendHistory.get('dividendDate', None) if dividendHistory else None,
-            "exDividend":   dividendHistory.get('exDividend', None) if dividendHistory else None,
-            "options":      optionsContracts if len(optionsContracts) > 0 else [],
-            "logReturns":   logReturns[0]['avgLogReturns'] if len(logReturns) > 0 else None,
-            "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else None,
-        })
+        print('Error: Missing Data')
         return None;
     
     return {
@@ -199,7 +189,15 @@ def modelCalculator(symbol):
         computedContracts.append(obj);
 
     # deduplicate the computed contracts
-    useComputedContracts = [dict(t) for t in {tuple(d.items()) for d in computedContracts}];
+    contracts = [dict(t) for t in {tuple(d.items()) for d in computedContracts}];
+
+    updateContracts = [];
+    seen = set();
+    for i in contracts:
+        id = (i['type'], i['contractSymbol'], i['expiration']);
+        if id not in seen: 
+            updateContracts.append(i);
+            seen.add(id);
 
     # Insert the computed contracts into the database.
     insertQuery('priced_options',
@@ -212,7 +210,7 @@ def modelCalculator(symbol):
         'priceDifference',
         'expiration',
         'impliedVolatility'
-    ],[tuple(i.values()) for i in useComputedContracts]);
+    ],[tuple(i.values()) for i in updateContracts]);
     print('Completed model calculations for:', symbol, 'at', datetime.datetime.now());
 
 
