@@ -117,11 +117,11 @@ def initializeInputs(symbol):
     riskFreeRate     = getRiskFreeRate();
     holidays         = getPublicylyListedHolidays();
     priceQuote       = getPriceQuote(symbol);
-    dividendHistory  = getDividendHistory(symbol);
+    # dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
     optionsContracts = getQuery("""SELECT a.* FROM options a LEFT JOIN priced_options b ON a."contractSymbol" = b."contractSymbol" WHERE b."lastPrice" is NULL AND a."symbol" = $ AND a."expiration" >= '{}' LIMIT 300 """.format(datetime.datetime.now()),[symbol]);
     
-    if any([riskFreeRate, holidays, priceQuote, dividendHistory, logReturns, optionsContracts]) is None: 
+    if any([riskFreeRate, holidays, priceQuote, logReturns, optionsContracts]) is None: 
         print('Error: Missing Data')
         return None;
     
@@ -129,8 +129,6 @@ def initializeInputs(symbol):
         "riskFreeRate": riskFreeRate,
         "tradingDays":  holidays.get('numberOfTradingDays', 252) if holidays else 252,
         "price":        priceQuote.get('regularMarketPrice', None) if priceQuote else None,
-        "dividendDate": dividendHistory.get('dividendDate', None) if dividendHistory else None,
-        "exDividend":   dividendHistory.get('exDividend', None) if dividendHistory else None,
         "options":      optionsContracts if len(optionsContracts) > 0 else [],
         "logReturns":   logReturns[0]['avgLogReturns'] if len(logReturns) > 0 else None,
         "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else None,
@@ -142,16 +140,14 @@ def modelCalculator(symbol):
     computedContracts = [];
     recipeObj         = initializeInputs(symbol);
     if recipeObj is None: return None;
-    dividend          = recipeObj.get('exDividend', None)
-    riskFreeRate      = recipeObj.get('riskFreeRate', None)
+    riskFreeRate      = recipeObj.get('riskFreeRate', None);
     options           = recipeObj.get('options', None);
-    dividendDate      = recipeObj.get('dividendDate', None)
     price             = recipeObj.get('price', None)
     tradingDays       = recipeObj.get('tradingDays',None)
     logReturns        = recipeObj.get('logReturns',None)
     standardDeviation = recipeObj.get('standardDeviation', None)
 
-    if any([riskFreeRate, tradingDays, standardDeviation, price, dividend, dividendDate, logReturns]) is None:
+    if any([riskFreeRate, tradingDays, standardDeviation, price, logReturns]) is None:
         print('Missing required inputs for the model calculator:', symbol)
         return None;
 
@@ -160,11 +156,8 @@ def modelCalculator(symbol):
         "tradingDays": tradingDays,
         "standardDeviation": standardDeviation,
         "stockPrice": price,
-        "exDividend": dividend,
         "logReturns": logReturns,
-        "standardDeviation": standardDeviation,
-        "exDividend": dividend,
-        "dividendDate": dividendDate
+        "standardDeviation": standardDeviation
     };
     
 
