@@ -1,5 +1,6 @@
 import datetime 
 import requests 
+import pprint 
 import traceback 
 import pytz
 from   Postgres.InsertQuery import insertQuery
@@ -117,9 +118,8 @@ def initializeInputs(symbol):
     riskFreeRate     = getRiskFreeRate();
     holidays         = getPublicylyListedHolidays();
     priceQuote       = getPriceQuote(symbol);
-    # dividendHistory  = getDividendHistory(symbol);
     logReturns       = getQuery("SELECT * FROM historical_returns WHERE symbol = $ ORDER BY timestamp DESC LIMIT 1",[symbol]);
-    optionsContracts = getQuery("""SELECT a.* FROM options a LEFT JOIN priced_options b ON a."contractSymbol" = b."contractSymbol" WHERE b."lastPrice" is NULL AND a."symbol" = $ AND a."expiration" >= '{}' LIMIT 300 """.format(datetime.datetime.now()),[symbol]);
+    optionsContracts = getQuery("""SELECT a.* FROM options a LEFT JOIN priced_options b ON a."contractSymbol" = b."contractSymbol" AND a.expiration = b.expiration WHERE a."symbol" = $ AND b."lastPrice" is NULL AND a."expiration" >= '{}' LIMIT 300 """.format(datetime.datetime.now()),[symbol]);
     
     if any([riskFreeRate, holidays, priceQuote, logReturns, optionsContracts]) is None: 
         print('Error: Missing Data')
@@ -188,7 +188,7 @@ def modelCalculator(symbol):
     seen = set();
     for i in contracts:
         id = (i['type'], i['contractSymbol'], i['expiration']);
-        if id not in seen: 
+        if id not in seen:
             updateContracts.append(i);
             seen.add(id);
 
