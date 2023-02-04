@@ -3,7 +3,8 @@ import traceback
 import datetime
 import time
 import numpy as np
-import pytz 
+import pytz
+from bs4 import BeautifulSoup
 from Postgres.InsertQuery import insertQuery
 from multiprocessing import Pool
 
@@ -34,6 +35,29 @@ def getHistoricalPrices(symbol):
     except Exception as e:
         print(e)
         traceback.print_exc()
+
+def getRiskFreeRate():
+    """ This function returns the risk free rate. """
+    url = 'https://www.cnbc.com/quotes/US10Y'
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser');
+            priceContainer = soup.find('div', class_='QuoteStrip-lastPriceStripContainer');
+            if priceContainer is None: 
+                print('no price')
+                return 
+            price = priceContainer.find('span', class_='QuoteStrip-lastPrice');
+            if price is not None: return float(price.text.strip().replace('%', '')) / 100;
+            else: 
+                print('no price')
+                return None
+        else:
+            print('Error Risk Free Rate: ', response.status_code)
+            return None
+
+    except Exception as e:
+        print(e);
 
 
 def getHistoricalYahooPrices(symbol=None):
@@ -72,6 +96,27 @@ def getHistoricalYahooPrices(symbol=None):
     except Exception as e:
         print(e)
         traceback.print_exc()
+
+
+def updateRiskFreeRate():
+    """ This function updates the risk free rate. """
+    # Get risk rating 
+    try: 
+        riskFreeRate = getRiskFreeRate();
+        if riskFreeRate: 
+            riskFreeRateObj = {
+                'timestamp': pytz.utc.localize(datetime.datetime.now()),
+                'riskFreeRate': riskFreeRate
+            }
+            useColumns = list(riskFreeRateObj.keys());
+            update     = [tuple(riskFreeRateObj.values())];
+            # Insert the results into the database
+            insertQuery('risk_free_rate', useColumns, update);
+            print('Updated risk free rate returns for', datetime.datetime.now());
+    
+    except Exception as error: 
+        print(error)
+        traceback.print_exc();
 
 
 def updateAllUnderlyingSecuritiesInfo():
