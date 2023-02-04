@@ -9,6 +9,7 @@ def normalDistributionCDF(x, mu = 0, std = 1):
     return norm.cdf(x, mu, std);
 
 def laPlaceCDF(x, mu = 0, std = 1):
+    if x is None or mu is None: return None;
     return 0.5 * (1 + np.tanh((x - mu) / (2 * std)));
 
 def calculateRecipeValues(S, X, D, std, T, r, t, t1):
@@ -43,10 +44,18 @@ def calculateEuropeanOptions(calculationObj = {}):
     d1 = (np.log(S/X) + (r + (std ** 2) / 2) * timeToExpiration) / (std * np.sqrt(timeToExpiration));
     d2 = d1 - (std * np.sqrt(timeToExpiration));
 
+    # if any of the values are NoneType, return None
+    if any([d1, mU, mStd]) is None: 
+        print('Encountered NoneType in calculateEuropeanOptions',d1, mU, mStd)
+        return None;
+
     if calculationObj['type'] == 'call':
-        callPrice = float(S * laPlaceCDF(d1,mU, mStd) - X * np.exp(-r * timeToExpiration) * laPlaceCDF(d2,mU,mStd));
+        if laPlaceCDF(d1,mU, mStd):
+            callPrice = float(S * laPlaceCDF(d1,mU, mStd) - X * np.exp(-r * timeToExpiration) * laPlaceCDF(d2,mU,mStd));
+        else: callPrice = None;
         return callPrice;
 
     if calculationObj['type'] == 'put':
-        putPrice = float(X * np.exp(-r * timeToExpiration) * laPlaceCDF(-d2,mU, mStd) - S * laPlaceCDF(-d1,mU, mStd));
-        return putPrice;
+        if laPlaceCDF(d1,mU, mStd):
+            putPrice = float(X * np.exp(-r * timeToExpiration) * laPlaceCDF(-d2,mU, mStd) - S * laPlaceCDF(-d1,mU, mStd));
+        else: putPrice = None;

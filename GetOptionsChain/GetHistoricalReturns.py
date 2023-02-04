@@ -51,8 +51,10 @@ def getHistoricalYahooPrices(symbol=None):
             if quoteStore is None: return None;
             quote = quoteStore.get('chart', {}).get('result', [])[0];
             if quote is None: return None;
-            historicalPrices = quote['indicators']['quote'];
-            closePrices = historicalPrices[0]['close'];
+            historicalPrices = quote.get('indicators', {}).get('quote',{});
+            closePrices      = historicalPrices[0].get('close',{}) if historicalPrices[0] else None;
+
+            if closePrices is None: return None
 
             # Calculate log returns
             logReturns        = list((np.log(closePrices[i] / closePrices[i-1])) for i in range(1, len(closePrices)));

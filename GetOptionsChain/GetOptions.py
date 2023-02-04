@@ -188,7 +188,7 @@ def updateOptionsData(symbol=None):
 
 
 def updateAllOptions():
-    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
+    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSM', 'META'];
     pool    = Pool(processes=6);
     pool.map(updateOptionsData, tickers);
     pool.close();

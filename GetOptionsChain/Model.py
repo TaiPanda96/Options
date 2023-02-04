@@ -1,6 +1,5 @@
 import datetime 
 import requests 
-import pprint 
 import traceback 
 import pytz
 from   Postgres.InsertQuery import insertQuery
@@ -131,7 +130,7 @@ def initializeInputs(symbol):
         "price":        priceQuote.get('regularMarketPrice', None) if priceQuote else None,
         "options":      optionsContracts if len(optionsContracts) > 0 else [],
         "logReturns":   logReturns[0]['avgLogReturns'] if len(logReturns) > 0 else None,
-        "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else None,
+        "standardDeviation": logReturns[0]['standardDeviation'] if len(logReturns) > 0 else 0,
     }
 
 
@@ -173,7 +172,7 @@ def modelCalculator(symbol):
             "type": contract['type'],
             "symbol": symbol,
             "contractSymbol": contract['contractSymbol'],
-            "lastPrice": float(contract.get('lastPrice', None)) if contract.get('lastPrice', None) is not None else None,
+            "lastPrice": float(contract.get('lastPrice', 0)) if 'lastPrice' in contract else None,
             "modelPrice": optionPrice,
             "priceDifference": priceDifference,
             "expiration": useExpirationDate,
@@ -208,7 +207,7 @@ def modelCalculator(symbol):
 
 
 def updateAllModelCalculatedOptions():
-    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSMC', 'META'];
+    tickers = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'TSM', 'META'];
     pool = Pool(processes=4);
     pool.map(modelCalculator, tickers);
     pool.close();
