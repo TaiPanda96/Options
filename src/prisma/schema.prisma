@@ -1,0 +1,59 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
+}
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+// Data Models
+model Ticker {
+  id     String   @id @default(uuid())
+  ticker String   @unique
+  price  Price[]
+  option Option[]
+
+  @@map("tickers")
+}
+
+model Price {
+  id     String   @id @default(uuid())
+  date   DateTime @unique @default(now())
+  open   Float    @map("open")
+  high   Float    @map("high")
+  low    Float    @map("low")
+  close  Float    @map("close")
+  volume Float    @map("volume")
+  Ticker Ticker?  @relation(fields: [ticker], references: [id])
+  ticker String?
+
+  @@map("prices")
+}
+
+model Option {
+  id                   String  @id @default(uuid())
+  contractSymbol       String
+  type                 String
+  lastTradeDate        String
+  expiration           String
+  strike               Float
+  percentChange        Float
+  openInterest         Float
+  change               Float
+  inTheMoney           Boolean
+  impliedVolatility    Float
+  volume               Float
+  ask                  Float
+  contractSize         String
+  currency             String
+  bid                  Float
+  lastPrice            Float
+  regular_market_price Float
+  at                   String
+  Ticker               Ticker? @relation(fields: [ticker], references: [id])
+  ticker               String?
+
+  @@unique([contractSymbol])
+  @@map("options")
+}
