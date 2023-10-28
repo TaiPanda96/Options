@@ -18,17 +18,15 @@ class Consumer:
         queue: Queue,
         processor: Callable,
         result_queue: Queue,
-        **kwargs
     ):
         self.batch = batch
         self.queue = queue
         self.processor = processor
         self.result_queue = result_queue
-        self.kwargs = kwargs
 
     @classmethod
     async def consumer_factory(
-        cls, queue: Queue, processor: Callable, result_queue: Queue, **kwargs
+        cls, queue: Queue, processor: Callable, result_queue: Queue
     ):
         """
         This is a factory method that creates a consumer for the jobs.
@@ -38,7 +36,6 @@ class Consumer:
             queue=queue,
             processor=processor,
             result_queue=result_queue,
-            **kwargs,
         )
 
     async def consume(self, processor: Callable, result_queue: Queue, **kwargs):
